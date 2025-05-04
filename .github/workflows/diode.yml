@@ -1,0 +1,29 @@
+name: Test Diode Logicielle
+
+on: [push]
+
+jobs:
+  test-diode:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Build source container
+        run: docker build -t diode-source -f Dockerfile-source .
+
+      - name: Build sink container
+        run: docker build -t diode-sink -f Dockerfile-sink .
+
+      - name: Create shared volume
+        run: mkdir -p shared && chmod 777 shared
+
+      - name: Run containers
+        run: |
+          docker run -d --name source -v ${{ github.workspace }}/shared:/comm:rw diode-source
+          docker run -d --name sink -v ${{ github.workspace }}/shared:/comm:ro diode-sink
+
+      - name: Wait and check logs
+        run: |
+          sleep 10
+          ls shared/
